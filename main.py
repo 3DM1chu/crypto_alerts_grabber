@@ -1,17 +1,18 @@
 import asyncio
 import multiprocessing
-import threading
 from datetime import datetime
 import json
 from multiprocessing import Process
 from typing import List
 import aiohttp
+import decouple
 import uvicorn
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI
 
 from tokens import Token, PriceEntry
 
-#HTTP_THREADS = int(config("HTTP_THREADS"))
+HTTP_THREADS = int(decouple.config("HTTP_THREADS"))
+PORT_TO_RUN_UVICORN = int(decouple.config("PORT_TO_RUN_UVICORN"))
 token_names: List[str] = []
 
 
@@ -56,7 +57,7 @@ def getAllTokenNames():
     return tokens_to_ret
 
 
-async def fetch_token_price(session, token: Token, semaphore, id):
+async def fetch_token_price(session, token: Token, semaphore, _id):
     print(f"Started fetching coin: {token.symbol}")
     await semaphore.acquire()
 
@@ -66,7 +67,7 @@ async def fetch_token_price(session, token: Token, semaphore, id):
         f"https://cold-condor-42.deno.dev/{token.symbol}USDT"
     ]
 
-    url = urls[id % len(urls)]
+    url = urls[_id % len(urls)]
     try:
         async with session.get(url) as resp:
             data = await resp.text()
@@ -82,52 +83,46 @@ async def fetch_token_price(session, token: Token, semaphore, id):
     semaphore.release()
 
 
-async def fetch_all_token_prices(tokens):
+async def fetch_all_token_prices(_tokens):
     semaphore = asyncio.Semaphore(15)  # Limiting to 10 concurrent requests
-    id = 0
+    task_id = 0
     async with aiohttp.ClientSession() as session:
         while True:  # Run indefinitely
             async with semaphore:
-                #print(tokenss)
-                #_token_symbols = json.loads(requests.get("http://localhost:5678/fetcher_tokens").json())
-               # for token_symbol in _token_symbols:
-                #    if not tokenAlreadyExists(token_symbol):
-                #        tokens.append(Token(token_symbol))
-                tasks = [fetch_token_price(session, token, semaphore, id) for token in tokens]
+                tasks = [fetch_token_price(session, token, semaphore, task_id + _id) for _id, token in enumerate(_tokens)]
                 await asyncio.gather(*tasks)
+                task_id += len(_tokens)
 
 
 app = FastAPI()
 
 
-@app.get("/fetcher_tokens")
-async def getTokensForLocal():
-    return json.dumps(getAllTokenNames())
-
-
 @app.put("/putToken/{token}")
 async def addTokenToCheck(token: str):
-    tokens.append(Token(token))
-    return {"tokens": generateJsonHistoryAllTokens()}
+    token_existing = False
+    for _token in tokens:
+        if _token.symbol == token:
+            token_existing = True
+            break
+    if not token_existing:
+        tokens.append(Token(token))
+        return {"tokens": generateJsonHistoryAllTokens()}
+    else:
+        return {"message": "Token already existing"}
 
 
 @app.delete("/deleteToken/{token}")
 async def addTokenToCheck(token: str):
     token_to_remove = None
-    id = 0
+    _id = 0
     for _token in tokens:
         if _token.symbol == token:
             token_to_remove = _token
             break
-        id += 1
+        _id += 1
     if token_to_remove is not None:
-        tokens.pop(id)
+        tokens.pop(_id)
     return {"tokens": generateJsonHistoryAllTokens()}
-
-
-@app.get("/prices/{coin}")
-async def getTokenPrice(coin: str):
-    return {"coin": coin}
 
 
 @app.get("/tokens")
@@ -146,4 +141,4 @@ if __name__ == "__main__":
 
     p = Process(target=test_mp, args=(tokens,))
     p.start()
-    uvicorn.run(app, host="0.0.0.0", port=21591, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=PORT_TO_RUN_UVICORN, log_level="info")
