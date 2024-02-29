@@ -44,17 +44,11 @@ def generateJsonHistoryOfOneToken(token: Token):
 
 
 def generateJsonHistoryAllTokens():
-    tokens_json = []
-    for token in tokens:
-        tokens_json.append(generateJsonHistoryOfOneToken(token))
-    return tokens_json
+    return [generateJsonHistoryOfOneToken(token) for token in tokens]
 
 
 def getAllTokenNames():
-    tokens_to_ret = []
-    for token in tokens:
-        tokens_to_ret.append(token.symbol)
-    return tokens_to_ret
+    return [token.symbol for token in tokens]
 
 
 async def fetch_token_price(session, token: Token, semaphore, _id):
@@ -89,7 +83,8 @@ async def fetch_all_token_prices(_tokens):
     async with aiohttp.ClientSession() as session:
         while True:  # Run indefinitely
             async with semaphore:
-                tasks = [fetch_token_price(session, token, semaphore, task_id + _id) for _id, token in enumerate(_tokens)]
+                tasks = [fetch_token_price(session, token, semaphore, task_id + _id)
+                         for _id, token in enumerate(_tokens)]
                 await asyncio.gather(*tasks)
                 task_id += len(_tokens)
 
@@ -99,11 +94,7 @@ app = FastAPI()
 
 @app.put("/putToken/{token}")
 async def addTokenToCheck(token: str):
-    token_existing = False
-    for _token in tokens:
-        if _token.symbol == token:
-            token_existing = True
-            break
+    token_existing = len([_token for _token in tokens if _token.symbol == token]) > 0
     if not token_existing:
         tokens.append(Token(token))
         return {"tokens": generateJsonHistoryAllTokens()}
@@ -113,14 +104,8 @@ async def addTokenToCheck(token: str):
 
 @app.delete("/deleteToken/{token}")
 async def addTokenToCheck(token: str):
-    token_to_remove = None
-    _id = 0
-    for _token in tokens:
-        if _token.symbol == token:
-            token_to_remove = _token
-            break
-        _id += 1
-    if token_to_remove is not None:
+    _id, _token_existing = next((_id, _token) for _id, _token in enumerate(tokens) if _token.symbol == token)
+    if _token_existing is not None:
         tokens.pop(_id)
     return {"tokens": generateJsonHistoryAllTokens()}
 
