@@ -22,4 +22,10 @@ https://api.binance.com/api/v3/uiKlines?symbol=DOGEUSDT&interval=1m&limit=1
 ]
 ```
 
+Example .env file
+```
+HTTP_THREADS=15
+PORT_TO_RUN_UVICORN=21591
+```
+
 #multithreaded #coins #cryptocurreny #crypto #binance #api #python
