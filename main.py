@@ -1,18 +1,14 @@
 import asyncio
-import multiprocessing
 from datetime import datetime
 import json
 from typing import List
 import aiohttp
 import requests
-from decouple import config
 from fastapi import FastAPI
-import uvicorn
-from multiprocessing import Process
 
 from tokens import Token, PriceEntry
 
-HTTP_THREADS = int(config("HTTP_THREADS"))
+#HTTP_THREADS = int(config("HTTP_THREADS"))
 tokens: List[Token] = []
 token_names: List[str] = []
 
