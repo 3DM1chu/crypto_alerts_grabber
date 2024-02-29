@@ -1,9 +1,12 @@
 import asyncio
+import multiprocessing
 from datetime import datetime
 import json
+from multiprocessing import Process
 from typing import List
 import aiohttp
 import requests
+import uvicorn
 from fastapi import FastAPI
 
 from tokens import Token, PriceEntry
@@ -80,10 +83,9 @@ async def fetch_token_price(session, token: Token, semaphore, id):
     semaphore.release()
 
 
-async def fetch_all_token_prices():
+async def fetch_all_token_prices(tokenss):
     semaphore = asyncio.Semaphore(15)  # Limiting to 10 concurrent requests
     id = 0
-
     def tokenAlreadyExists(token_symbol):
         for _token in tokens:
             if token_symbol == _token.symbol:
@@ -93,10 +95,11 @@ async def fetch_all_token_prices():
     async with aiohttp.ClientSession() as session:
         while True:  # Run indefinitely
             async with semaphore:
-                _token_symbols = json.loads(requests.get("http://localhost:5678/fetcher_tokens").json())
-                for token_symbol in _token_symbols:
-                    if not tokenAlreadyExists(token_symbol):
-                        tokens.append(Token(token_symbol))
+                print(tokenss)
+                #_token_symbols = json.loads(requests.get("http://localhost:5678/fetcher_tokens").json())
+               # for token_symbol in _token_symbols:
+                #    if not tokenAlreadyExists(token_symbol):
+                #        tokens.append(Token(token_symbol))
                 tasks = [fetch_token_price(session, token, semaphore, id) for token in tokens]
                 print("OO")
                 await asyncio.gather(*tasks)
@@ -127,12 +130,13 @@ async def getTokensPrice():
 
 
 if __name__ == "__main__":
-    #q = multiprocessing.Queue()
-    #proc = Process(target=uvicorn.run,
-    #               kwargs={"app": "main:app", "port": 5678, "log_level": "info"},
-    #               daemon=True)
-    #proc.start()
-    #p = multiprocessing.Process(target=fetch_all_token_prices, args=(tokens, q))
-    #p.start()
-    #uvicorn.run(app, host="0.0.0.0", port=8000)
-    asyncio.run(fetch_all_token_prices())
+    q = multiprocessing.Queue()
+    ttt = multiprocessing.Value('i', tokens)
+    proc = Process(target=uvicorn.run,
+                   kwargs={"app": "main:app", "port": 21591, "log_level": "info", "host": "192.168.15.91"},
+                   daemon=True)
+    proc.start()
+    p = multiprocessing.Process(target=fetch_all_token_prices, args=ttt)
+    p.start()
+    #uvicorn.run(app, host="192.168.15.91", port=21591)
+    #asyncio.run(fetch_all_token_prices())
