@@ -111,6 +111,20 @@ async def addTokenToCheck(token: str):
     return {"tokens": generateJsonHistoryAllTokens()}
 
 
+@app.delete("/deleteToken/{token}")
+async def addTokenToCheck(token: str):
+    token_to_remove = None
+    id = 0
+    for _token in tokens:
+        if _token.symbol == token:
+            token_to_remove = _token
+            break
+        id += 1
+    if token_to_remove is not None:
+        tokens.pop(id)
+    return {"tokens": generateJsonHistoryAllTokens()}
+
+
 @app.get("/prices/{coin}")
 async def getTokenPrice(coin: str):
     return {"coin": coin}
@@ -121,35 +135,15 @@ async def getTokensPrice():
     return json.dumps(tokens)
 
 
-def test_mp(_q, l):
-    l.acquire()
-    try:
-        asyncio.run(asyncio.sleep(5))
-        asyncio.run(fetch_all_token_prices(_q))
-    finally:
-        l.release()
+def test_mp(_q):
+    asyncio.run(asyncio.sleep(5))
+    asyncio.run(fetch_all_token_prices(_q))
 
 
 if __name__ == "__main__":
-    lock = multiprocessing.Lock()
     manager = multiprocessing.Manager()
     tokens: List[Token] = manager.list()
 
-    #proc = Process(target=uvicorn.run,
-    #               #kwargs={"app": "main:app", "port": 21591, "log_level": "info", "host": "192.168.15.91"},
-    #               kwargs={"app": "main:app", "port": 21591, "log_level": "info", "host": "0.0.0.0"},
-    #               daemon=True)
-    #proc.start()
-
-    p = Process(target=test_mp, args=(tokens, lock))
+    p = Process(target=test_mp, args=(tokens,))
     p.start()
-
-    #asyncio.run(fetch_all_token_prices(tokens))
-    #proc.start()
-    #t1 = threading.Thread(target=fetch_all_token_prices, args=(tokens, lock), daemon=True)
-    #t1.start()
-    #p = multiprocessing.Process(target=fetch_all_token_prices, args=(tokens, lock), daemon=True)
-    #p.start()
-    #p.join()
-    #uvicorn.run(app, host="192.168.15.91", port=21591, log_level="info")
     uvicorn.run(app, host="0.0.0.0", port=21591, log_level="info")
