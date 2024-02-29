@@ -84,7 +84,7 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
 
 
 async def fetch_all_token_prices(_tokens):
-    semaphore = asyncio.Semaphore(15)  # Limiting to 10 concurrent requests
+    semaphore = asyncio.Semaphore(HTTP_THREADS)  # Limiting to 10 concurrent requests
     task_id = 0
     async with aiohttp.ClientSession() as session:
         while True:  # Run indefinitely
