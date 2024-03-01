@@ -92,6 +92,7 @@ async def fetch_all_token_prices(_tokens):
                          for _id, token in enumerate(_tokens)]
                 await asyncio.gather(*tasks)
                 task_id += len(_tokens)
+                await asyncio.sleep(0.5)
 
 
 app = FastAPI()
