@@ -87,6 +87,8 @@ async def fetch_all_token_prices(_tokens):
     task_id = 0
     async with aiohttp.ClientSession() as session:
         while True:  # Run indefinitely
+            if semaphore.locked():
+                await asyncio.sleep(2)
             async with semaphore:
                 tasks = [fetch_token_price(session, token, semaphore, task_id + _id)
                          for _id, token in enumerate(_tokens)]
