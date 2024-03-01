@@ -109,6 +109,8 @@ async def addTokenToCheck(token: str):
 
 @app.delete("/deleteToken/{token}")
 async def addTokenToCheck(token: str):
+    if len(tokens) == 0:
+        return {"tokens": []}
     _id, _token_existing = next((_id, _token) for _id, _token in enumerate(tokens) if _token.symbol == token)
     if _token_existing is not None:
         tokens.pop(_id)
