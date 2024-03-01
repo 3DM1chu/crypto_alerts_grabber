@@ -13,6 +13,7 @@ from tokens import Token, PriceEntry
 
 HTTP_THREADS = int(decouple.config("HTTP_THREADS"))
 PORT_TO_RUN_UVICORN = int(decouple.config("PORT_TO_RUN_UVICORN"))
+URL_OF_COORDINATOR = str(decouple.config("URL_OF_COORDINATOR"))
 token_names: List[str] = []
 
 
@@ -69,7 +70,9 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
             coin_data = data[0]
             current_price = float(coin_data[4])
             print(current_price)
-            token.addPriceEntry(current_price, datetime.now())
+            async with aiohttp.ClientSession() as session:
+                await session.post(f"{URL_OF_COORDINATOR}/addTokenPrice", data=json.dumps({"token" : data}))
+            #token.addPriceEntry(current_price, datetime.now())
     except:
         x = "err of URL: " + url
         print(x)
