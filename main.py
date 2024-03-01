@@ -72,8 +72,9 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
             print(current_price)
             token.addPriceEntry(current_price, datetime.now())
             async with aiohttp.ClientSession() as sessionx:
-                data_to_send = {"token": {"coin_name": token.symbol, "current_price": token.getCurrentPrice(),
-                                          "current_time": token.getCurrentPriceDatetime()}}
+                data_to_send = {"token": json.dumps({"coin_name": token.symbol,
+                                                     "current_price": token.getCurrentPrice(),
+                                                     "current_time": token.getCurrentPriceDatetime()})}
                 await sessionx.post(f"{URL_OF_COORDINATOR}/addTokenPrice", data=data_to_send)
     except:
         x = "err of URL: " + url
