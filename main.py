@@ -53,7 +53,6 @@ def getAllTokenNames():
 
 
 async def fetch_token_price(session, token: Token, semaphore, _id):
-    print(f"Started fetching coin: {token.symbol}")
     await semaphore.acquire()
 
     urls = [
@@ -69,7 +68,6 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
             data = json.loads(data)
             coin_data = data[0]
             current_price = float(coin_data[4])
-            print(current_price)
             token.addPriceEntry(current_price, datetime.now())
             async with aiohttp.ClientSession() as sessionx:
                 data_to_send = {"coin_name": token.symbol, "current_price": token.getCurrentPrice(),
