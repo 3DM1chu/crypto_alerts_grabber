@@ -114,7 +114,12 @@ async def addTokenToCheck(token: str):
     _id, _token_existing = next((_id, _token) for _id, _token in enumerate(tokens) if _token.symbol == token)
     if _token_existing is not None:
         tokens.pop(_id)
-    return {"tokens": generateJsonHistoryAllTokens()}
+        if len(tokens) == 0:
+            return {"tokens": []}
+        else:
+            return {"tokens": generateJsonHistoryAllTokens()}
+    else:
+        return {"message": "Token not existing"}
 
 
 @app.get("/tokens")
