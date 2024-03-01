@@ -71,9 +71,7 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
             current_price = float(coin_data[4])
             print(current_price)
             async with aiohttp.ClientSession() as sessionx:
-                print("Sending to " + f"{URL_OF_COORDINATOR}/addTokenPrice")
-                data_to_send = {"token": data}
-                print(data_to_send)
+                data_to_send = {"token": coin_data}
                 await sessionx.post(f"{URL_OF_COORDINATOR}/addTokenPrice", data=data_to_send)
             #token.addPriceEntry(current_price, datetime.now())
     except:
