@@ -1,6 +1,7 @@
 import asyncio
 import multiprocessing
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 import json
 from multiprocessing import Process
 from typing import List
@@ -16,20 +17,6 @@ HTTP_THREADS = int(decouple.config("HTTP_THREADS"))
 PORT_TO_RUN_UVICORN = int(decouple.config("PORT_TO_RUN_UVICORN"))
 URL_OF_COORDINATOR = str(decouple.config("URL_OF_COORDINATOR"))
 token_names: List[str] = []
-
-
-def turnJsonIntoTokenList(json_obj):
-    tokens_to_return: List[Token] = []
-    for token_from_file in json_obj:
-        token = Token(token_from_file["symbol"])
-        token.currency = token_from_file["currency"]
-        for price_history_entry in token_from_file["price_history"]:
-            timestamp_format = "%Y-%m-%d %H:%M:%S"
-            # Parse the string into a datetime object
-            timestamp = datetime.strptime(price_history_entry["timestamp"], timestamp_format)
-            token.price_history.append(PriceEntry(price_history_entry["price"], timestamp))
-        tokens_to_return.append(token)
-    return tokens_to_return
 
 
 def generateJsonHistoryOfOneToken(token: Token):
@@ -67,12 +54,27 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
         async with session.get(url) as resp:
             data = await resp.text()
             data = json.loads(data)
-            coin_data = data[0]
-            current_price = float(coin_data[4])
+            token_data = data[0]
+            current_price = float(token_data[4])
             token.addPriceEntry(current_price, datetime.now())
-            data_to_send = {"coin_name": token.symbol, "current_price": token.getCurrentPrice(),
+            data_to_send = {"symbol": token.symbol, "current_price": token.getCurrentPrice(),
                             "current_time": token.getCurrentPriceDatetime().strftime("%Y-%m-%d %H:%M:%S")}
             requests.post(f"{URL_OF_COORDINATOR}/addTokenPrice", data=json.dumps(data_to_send))
+            """
+            # Get the current time
+            current_time = datetime.now()
+
+            # Subtract 1 hour from the current time
+            adjusted_time = current_time - timedelta(hours=1)
+
+            # Convert adjusted time to Unix time
+            adjusted_unix_time = int(adjusted_time.timestamp()) * 1000
+
+            _data = requests.get(f"https://api.binance.com/api/v3/uiKlines?symbol={token.symbol}USDT&interval=1m"
+                                 f"&limit=1&startTime={adjusted_unix_time}")
+            _data = json.loads(_data.text)[0]
+            price_1h_ago = float(_data[4])
+            """
     except Exception as e:
         print("Problem with URL: " + url)
         print(e)
@@ -109,7 +111,7 @@ async def addTokenToCheck(token: str):
 
 
 @app.delete("/deleteToken/{token}")
-async def addTokenToCheck(token: str):
+async def deleteTokenFromChecking(token: str):
     if len(tokens) == 0:
         return {"tokens": []}
     _id, _token_existing = next((_id, _token) for _id, _token in enumerate(tokens) if _token.symbol == token)
