@@ -6,6 +6,7 @@ from multiprocessing import Process
 from typing import List
 import aiohttp
 import decouple
+import requests
 import uvicorn
 from fastapi import FastAPI
 
