@@ -70,6 +70,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
             data_to_send = {"symbol": token.symbol, "current_price": token.getCurrentPrice(),
                             "current_time": token.getCurrentPriceDatetime().strftime("%Y-%m-%d %H:%M:%S")}
             requests.post(f"{URL_OF_COORDINATOR}/addTokenPrice", data=json.dumps(data_to_send))
+            print(f"Sent token {token.symbol}")
             """
             # Get the current time
             current_time = datetime.now()
