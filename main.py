@@ -54,14 +54,14 @@ async def fetch_token_price(token: Token, semaphore, _id):
         try:
             async with session.get(url) as resp:
                 data = await resp.json()
-                print(data)
+                #print(data)
                 token_data = data[0]
                 current_price = float(token_data[4])
                 token.addPriceEntry(current_price, datetime.now())
                 data_to_send = {"symbol": token.symbol, "current_price": token.getCurrentPrice(),
                                 "current_time": token.getCurrentPriceDatetime().strftime("%Y-%m-%d %H:%M:%S")}
                 requests.post(f"{URL_OF_COORDINATOR}/addTokenPrice", data=json.dumps(data_to_send))
-                print(f"Sent token {token.symbol}")
+                #print(f"Sent token {token.symbol}")
                 """
                 # Get the current time
                 current_time = datetime.now()
@@ -79,9 +79,9 @@ async def fetch_token_price(token: Token, semaphore, _id):
                 """
         except ProxyConnectionError:
             err = ""
-            print("Proxy error...")
+            #print("Proxy error...")
         except:
-            print("Problem with URL: " + url)
+            #print("Problem with URL: " + url)
             traceback.print_exc()
             await asyncio.sleep(5)
 
@@ -145,4 +145,4 @@ if __name__ == "__main__":
     tokens: List[Token] = manager.list()
     fetcher_process = Process(target=start_fetching, args=(tokens,))
     fetcher_process.start()
-    uvicorn.run(app, host="0.0.0.0", port=PORT_TO_RUN_UVICORN, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=PORT_TO_RUN_UVICORN, log_level="error")
