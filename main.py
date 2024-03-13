@@ -55,7 +55,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
     url = urls[_id % len(urls)]
     if 'api.binance' in url:
         connector = ProxyConnector.from_url(proxy)
-        session = aiohttp.ClientSession(connector)
+        session = aiohttp.ClientSession(connector=connector)
     else:
         await asyncio.sleep(random.randint(1, 5))
         session = aiohttp.ClientSession()
