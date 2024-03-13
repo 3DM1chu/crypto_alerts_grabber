@@ -1,5 +1,6 @@
 import asyncio
 import multiprocessing
+import random
 import time
 from datetime import datetime, timedelta
 import json
@@ -56,6 +57,7 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
         proxy_use = proxy
     else:
         proxy_use = None
+        await asyncio.sleep(random.randint(1, 5))
     try:
         async with session.get(url, proxy=proxy_use) as resp:
             data = await resp.text()
@@ -88,7 +90,7 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
     semaphore.release()
 
 
-async def fetch_all_token_prices(_tokens, direct_binance: bool):
+async def fetch_all_token_prices(_tokens):
     semaphore = asyncio.Semaphore(HTTP_THREADS)  # Limiting to 10 concurrent requests
     task_id = 0
     async with aiohttp.ClientSession() as session:
@@ -100,10 +102,6 @@ async def fetch_all_token_prices(_tokens, direct_binance: bool):
                          for _id, token in enumerate(_tokens)]
                 await asyncio.gather(*tasks)
                 task_id += len(_tokens)
-                if direct_binance:
-                    await asyncio.sleep(1)
-                else:
-                    await asyncio.sleep(5)
 
 
 app = FastAPI()
