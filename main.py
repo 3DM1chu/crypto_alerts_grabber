@@ -93,6 +93,7 @@ async def fetch_all_token_prices(_tokens):
     task_id = 0
     while True:  # Run indefinitely
         if semaphore.locked():
+            print("LOCKED???")
             time.sleep(1)
         async with semaphore:
             tasks = [fetch_token_price(token, semaphore, task_id + _id)
