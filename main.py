@@ -45,7 +45,7 @@ def getAllTokenNames():
 
 
 async def fetch_token_price(token: Token, semaphore, _id):
-    #await semaphore.acquire()
+    await semaphore.acquire()
 
     url = f"https://api.binance.com/api/v3/uiKlines?symbol={token.symbol}USDT&interval=1m&limit=1"
     connector = ProxyConnector.from_url(proxy)
@@ -85,7 +85,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
             traceback.print_exc()
             time.sleep(5)
 
-    #semaphore.release()
+    semaphore.release()
 
 
 async def fetch_all_token_prices(_tokens):
@@ -97,10 +97,10 @@ async def fetch_all_token_prices(_tokens):
             time.sleep(1)
         async with semaphore:
             print("starting " + str(len(_tokens)))
-            tasks = [fetch_token_price(token, semaphore, task_id + _id)
+            tasks = [asyncio.create_task(fetch_token_price(token, semaphore, task_id + _id))
                      for _id, token in enumerate(_tokens)]
-            await asyncio.gather(*tasks)
             task_id += len(_tokens)
+            _ = await asyncio.wait(*tasks)
 
 
 app = FastAPI()
