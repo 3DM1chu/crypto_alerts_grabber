@@ -79,6 +79,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
                 """
         except ProxyConnectionError:
             err = ""
+            print("Proxy error...")
         except:
             print("Problem with URL: " + url)
             traceback.print_exc()
