@@ -45,20 +45,9 @@ def getAllTokenNames():
 
 
 async def fetch_token_price(token: Token, semaphore, _id):
-    await asyncio.sleep(random.randrange(1, 5))
-
-    urls = [
-        f"https://api.binance.com/api/v3/uiKlines?symbol={token.symbol}USDT&interval=1m&limit=1",
-        f"https://pexljc3fiphfkworlrtv52mi2q0cqhke.lambda-url.eu-central-1.on.aws/?coin={token.symbol}USDT",
-        # f"https://cold-condor-42.deno.dev/{token.symbol}USDT"
-    ]
-
-    url = urls[_id % len(urls)]
-    if 'api.binance' in url:
-        connector = ProxyConnector.from_url(proxy)
-        session = aiohttp.ClientSession(connector=connector)
-    else:
-        session = aiohttp.ClientSession()
+    url = f"https://api.binance.com/api/v3/uiKlines?symbol={token.symbol}USDT&interval=1m&limit=1",
+    connector = ProxyConnector.from_url(proxy)
+    session = aiohttp.ClientSession(connector=connector)
     async with session:
         try:
             async with session.get(url) as resp:
