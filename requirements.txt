@@ -1,10 +1,6 @@
 requests
 python-decouple
 pytz
-websocket-client
-rel
-websocket
-python-decouple
 aiohttp
 fastapi
 uvicorn
