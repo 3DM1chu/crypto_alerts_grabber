@@ -83,7 +83,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
         except:
             print("Problem with URL: " + url)
             traceback.print_exc()
-            time.sleep(5)
+            await asyncio.sleep(5)
 
     semaphore.release()
 
