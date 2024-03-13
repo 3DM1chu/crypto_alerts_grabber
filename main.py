@@ -12,7 +12,7 @@ import decouple
 import requests
 import uvicorn
 from fastapi import FastAPI
-from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
+from aiohttp_socks import ProxyConnector
 
 from tokens import Token
 
@@ -47,7 +47,7 @@ def getAllTokenNames():
 async def fetch_token_price(token: Token, semaphore, _id):
     await semaphore.acquire()
 
-    url = str(f"https://api.binance.com/api/v3/uiKlines?symbol={token.symbol}USDT&interval=1m&limit=1")
+    url = f"https://api.binance.com/api/v3/uiKlines?symbol={token.symbol}USDT&interval=1m&limit=1"
     connector = ProxyConnector.from_url(proxy)
     session = aiohttp.ClientSession(connector=connector)
     async with session:
