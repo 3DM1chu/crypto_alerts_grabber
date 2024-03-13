@@ -61,7 +61,7 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
         await asyncio.sleep(random.randint(1, 5))
     try:
         async with session.get(url, proxy=proxy_use) as resp:
-            data = resp.text
+            data = resp.text()
             data = json.loads(data)
             token_data = data[0]
             current_price = float(token_data[4])
