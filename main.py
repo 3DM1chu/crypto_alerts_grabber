@@ -20,8 +20,7 @@ HTTP_THREADS = int(decouple.config("HTTP_THREADS"))
 PORT_TO_RUN_UVICORN = int(decouple.config("PORT_TO_RUN_UVICORN"))
 URL_OF_COORDINATOR = str(decouple.config("URL_OF_COORDINATOR"))
 token_names: List[str] = []
-proxy = dict(http=str(decouple.config("PROXY_SOCKS5")),
-             https=str(decouple.config("PROXY_SOCKS5")))
+proxy = str(decouple.config("PROXY_SOCKS5"))
 
 
 def generateJsonHistoryOfOneToken(token: Token):
@@ -45,7 +44,7 @@ def getAllTokenNames():
     return [token.symbol for token in tokens]
 
 
-async def fetch_token_price(token: Token, semaphore, _id):
+async def fetch_token_price(session, token: Token, semaphore, _id):
     await semaphore.acquire()
 
     urls = [
@@ -61,7 +60,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
         proxy_use = None
         await asyncio.sleep(random.randint(1, 5))
     try:
-        with requests.get(url, proxies=proxy_use) as resp:
+        async with session.get(url, proxies=proxy_use) as resp:
             data = resp.text
             data = json.loads(data)
             token_data = data[0]
@@ -95,14 +94,15 @@ async def fetch_token_price(token: Token, semaphore, _id):
 async def fetch_all_token_prices(_tokens):
     semaphore = asyncio.Semaphore(HTTP_THREADS)  # Limiting to 10 concurrent requests
     task_id = 0
-    while True:  # Run indefinitely
-        if semaphore.locked():
-            await asyncio.sleep(2)
-        async with semaphore:
-            tasks = [fetch_token_price(token, semaphore, task_id + _id)
-                     for _id, token in enumerate(_tokens)]
-            await asyncio.gather(*tasks)
-            task_id += len(_tokens)
+    async with aiohttp.ClientSession() as session:
+        while True:  # Run indefinitely
+            if semaphore.locked():
+                await asyncio.sleep(2)
+            async with semaphore:
+                tasks = [fetch_token_price(session, token, semaphore, task_id + _id)
+                         for _id, token in enumerate(_tokens)]
+                await asyncio.gather(*tasks)
+                task_id += len(_tokens)
 
 
 app = FastAPI()
