@@ -2,6 +2,7 @@ import asyncio
 import multiprocessing
 import random
 import time
+import traceback
 from datetime import datetime, timedelta
 import json
 from multiprocessing import Process
@@ -83,9 +84,9 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
             _data = json.loads(_data.text)[0]
             price_1h_ago = float(_data[4])
             """
-    except Exception as e:
+    except:
         print("Problem with URL: " + url)
-        print(e)
+        traceback.print_exc()
 
     semaphore.release()
 
