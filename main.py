@@ -58,7 +58,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
         connector = ProxyConnector.from_url(proxy)
         session = aiohttp.ClientSession(connector=connector)
     else:
-        await asyncio.sleep(random.randint(1, 5))
+        time.sleep(random.randint(1, 5))
         session = aiohttp.ClientSession()
     async with session:
         try:
