@@ -1,6 +1,5 @@
 import asyncio
 import multiprocessing
-import random
 import time
 import traceback
 from datetime import datetime
@@ -54,6 +53,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
         try:
             async with session.get(url) as resp:
                 data = await resp.json()
+                print(data)
                 token_data = data[0]
                 current_price = float(token_data[4])
                 token.addPriceEntry(current_price, datetime.now())
