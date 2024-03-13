@@ -48,20 +48,24 @@ async def fetch_token_price(token: Token, semaphore, _id):
     await semaphore.acquire()
 
     url = f"https://api.binance.com/api/v3/uiKlines?symbol={token.symbol}USDT&interval=1m&limit=1"
-    connector = ProxyConnector.from_url(proxy)
-    session = aiohttp.ClientSession(connector=connector)
+    use_proxy = len(proxy) != 0
+    if use_proxy:
+        connector = ProxyConnector.from_url(proxy)
+        session = aiohttp.ClientSession(connector=connector)
+    else:
+        session = aiohttp.ClientSession()
     async with session:
         try:
             async with session.get(url) as resp:
                 data = await resp.json()
-                #print(data)
                 token_data = data[0]
                 current_price = float(token_data[4])
                 token.addPriceEntry(current_price, datetime.now())
                 data_to_send = {"symbol": token.symbol, "current_price": token.getCurrentPrice(),
                                 "current_time": token.getCurrentPriceDatetime().strftime("%Y-%m-%d %H:%M:%S")}
                 requests.post(f"{URL_OF_COORDINATOR}/addTokenPrice", data=json.dumps(data_to_send))
-                #print(f"Sent token {token.symbol}")
+                if use_proxy:
+                    await asyncio.sleep(3)
                 """
                 # Get the current time
                 current_time = datetime.now()
