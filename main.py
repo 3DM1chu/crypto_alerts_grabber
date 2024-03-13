@@ -45,7 +45,7 @@ def getAllTokenNames():
 
 
 async def fetch_token_price(token: Token, semaphore, _id):
-    await semaphore.acquire()
+    await asyncio.sleep(random.randrange(1, 5))
 
     urls = [
         f"https://api.binance.com/api/v3/uiKlines?symbol={token.symbol}USDT&interval=1m&limit=1",
@@ -58,7 +58,6 @@ async def fetch_token_price(token: Token, semaphore, _id):
         connector = ProxyConnector.from_url(proxy)
         session = aiohttp.ClientSession(connector=connector)
     else:
-        time.sleep(random.randint(1, 5))
         session = aiohttp.ClientSession()
     async with session:
         try:
@@ -90,7 +89,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
             print("Problem with URL: " + url)
             traceback.print_exc()
 
-    semaphore.release()
+    #semaphore.release()
 
 
 async def fetch_all_token_prices(_tokens):
