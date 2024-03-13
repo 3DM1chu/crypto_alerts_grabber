@@ -8,4 +8,4 @@ python-decouple
 aiohttp
 fastapi
 uvicorn
-requests[socks]
+aiohttp_socks
