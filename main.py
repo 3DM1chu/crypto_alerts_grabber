@@ -1,6 +1,7 @@
 import asyncio
 import multiprocessing
 import random
+import time
 import traceback
 from datetime import datetime
 import json
@@ -97,7 +98,7 @@ async def fetch_all_token_prices(_tokens):
     task_id = 0
     while True:  # Run indefinitely
         if semaphore.locked():
-            await asyncio.sleep(2)
+            time.sleep(1)
         async with semaphore:
             tasks = [fetch_token_price(token, semaphore, task_id + _id)
                      for _id, token in enumerate(_tokens)]
