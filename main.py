@@ -141,7 +141,6 @@ def start_fetching(_tokens):
 if __name__ == "__main__":
     manager = multiprocessing.Manager()
     tokens: List[Token] = manager.list()
-    tokens.append(Token("BTC"))
     fetcher_process = Process(target=start_fetching, args=(tokens,))
     fetcher_process.start()
     uvicorn.run(app, host="0.0.0.0", port=PORT_TO_RUN_UVICORN, log_level="info")
