@@ -87,6 +87,7 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
             """
     except:
         print("Problem with URL: " + url)
+        traceback.print_stack()
 
     semaphore.release()
 
