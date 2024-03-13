@@ -11,12 +11,14 @@ import requests
 import uvicorn
 from fastapi import FastAPI
 
-from tokens import Token, PriceEntry
+from tokens import Token
 
 HTTP_THREADS = int(decouple.config("HTTP_THREADS"))
 PORT_TO_RUN_UVICORN = int(decouple.config("PORT_TO_RUN_UVICORN"))
 URL_OF_COORDINATOR = str(decouple.config("URL_OF_COORDINATOR"))
 token_names: List[str] = []
+proxy = dict(http=str(decouple.config("PROXY_SOCKS5")),
+             https=str(decouple.config("PROXY_SOCKS5")))
 
 
 def generateJsonHistoryOfOneToken(token: Token):
@@ -50,8 +52,12 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
     ]
 
     url = urls[_id % len(urls)]
+    if 'api.binance' in url:
+        proxy_use = proxy
+    else:
+        proxy_use = None
     try:
-        async with session.get(url) as resp:
+        async with session.get(url, proxy=proxy_use) as resp:
             data = await resp.text()
             data = json.loads(data)
             token_data = data[0]
@@ -82,7 +88,7 @@ async def fetch_token_price(session, token: Token, semaphore, _id):
     semaphore.release()
 
 
-async def fetch_all_token_prices(_tokens):
+async def fetch_all_token_prices(_tokens, direct_binance: bool):
     semaphore = asyncio.Semaphore(HTTP_THREADS)  # Limiting to 10 concurrent requests
     task_id = 0
     async with aiohttp.ClientSession() as session:
@@ -94,7 +100,10 @@ async def fetch_all_token_prices(_tokens):
                          for _id, token in enumerate(_tokens)]
                 await asyncio.gather(*tasks)
                 task_id += len(_tokens)
-                await asyncio.sleep(5)
+                if direct_binance:
+                    await asyncio.sleep(1)
+                else:
+                    await asyncio.sleep(5)
 
 
 app = FastAPI()
