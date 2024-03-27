@@ -32,6 +32,7 @@ def generateJsonHistoryOfOneToken(token: Token):
     for price_entry in token.price_history:
         if len(token.price_history) != 0:
             token_json["price_history"].append({"price": price_entry.price,
+                                                "volume_token": price_entry.volume_token,
                                                 "timestamp": price_entry.timestamp.strftime('%Y-%m-%d %H:%M:%S')})
     return token_json
 
@@ -60,8 +61,10 @@ async def fetch_token_price(token: Token, semaphore, _id):
                 data = await resp.json()
                 token_data = data[0]
                 current_price = float(token_data[4])
-                token.addPriceEntry(current_price, datetime.now())
+                volume_token = float(token_data[5])
+                token.addPriceEntry(current_price, datetime.now(), volume_token)
                 data_to_send = {"symbol": token.symbol, "current_price": token.getCurrentPrice(),
+                                "volume_token": volume_token,
                                 "current_time": token.getCurrentPriceDatetime().strftime("%Y-%m-%d %H:%M:%S")}
                 requests.post(f"{URL_OF_COORDINATOR}/addTokenPrice", data=json.dumps(data_to_send))
                 if use_proxy:
@@ -83,9 +86,7 @@ async def fetch_token_price(token: Token, semaphore, _id):
                 """
         except ProxyConnectionError:
             err = ""
-            #print("Proxy error...")
-        except:
-            #print("Problem with URL: " + url)
+        except Exception:
             traceback.print_exc()
             await asyncio.sleep(5)
 
@@ -112,11 +113,10 @@ app = FastAPI()
 @app.put("/putToken/{token}")
 async def addTokenToCheck(token: str):
     token_existing = len([_token for _token in tokens if _token.symbol == token]) > 0
-    if not token_existing:
-        tokens.append(Token(token))
-        return {"tokens": generateJsonHistoryAllTokens()}
-    else:
+    if token_existing:
         return {"message": "Token already existing"}
+    tokens.append(Token(token))
+    return {"tokens": generateJsonHistoryAllTokens()}
 
 
 @app.delete("/deleteToken/{token}")
@@ -124,14 +124,14 @@ async def deleteTokenFromChecking(token: str):
     if len(tokens) == 0:
         return {"tokens": []}
     _id, _token_existing = next((_id, _token) for _id, _token in enumerate(tokens) if _token.symbol == token)
-    if _token_existing is not None:
-        tokens.pop(_id)
-        if len(tokens) == 0:
-            return {"tokens": []}
-        else:
-            return {"tokens": generateJsonHistoryAllTokens()}
-    else:
+    if _token_existing is None:
         return {"message": "Token not existing"}
+    tokens.pop(_id)
+    return (
+        {"tokens": []}
+        if len(tokens) == 0
+        else {"tokens": generateJsonHistoryAllTokens()}
+    )
 
 
 @app.get("/tokens")
